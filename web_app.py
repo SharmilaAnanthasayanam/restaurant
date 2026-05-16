@@ -58,7 +58,6 @@ def get_customer(id):
     else:
         return "User not Found", 404
     
-
 @app.route("/customer/<id>/orders", methods=['GET'])
 def list_orders(id):
     cust = customers.get(id)
