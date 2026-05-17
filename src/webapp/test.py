@@ -22,6 +22,8 @@ response = requests.post(url, json=payload, headers=headers)
 
 menu = response.json()
 
+print("menu: ", menu)
+
 
 url = base_url+"/create/customer"
 
@@ -47,9 +49,11 @@ response = requests.post(url, json=payload, headers=headers)
 
 res = response.json()
 
+print("order_res: ", res)
 
 
-url = base_url + f"/customer/{cust_id}/order/{res.get('orders')[0]}"
+
+url = base_url + f"/customer/{cust_id}/order/{res.get('id')}"
 
 response = requests.get(url)
 

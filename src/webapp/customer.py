@@ -61,43 +61,52 @@ class Orders:
         self.orders.append(Order)
         
     def update_status(self, order_id, status):
-        for ind, order in enumerate(self.orders):
+        for order in self.orders:
             if order.id == order_id:
                 order.update_status(status)
+                return True
+        return False
 
     def get_order(self, order_id):
         for order in self.orders:
             if order.id == order_id:
                 return order
         return None
+    
+    def update_order_dish(self, order_id, dishes, menus):
+        order = self.get_order(order_id)
+        if order:
+            return order, order.add_dishes(dishes, menus)
+        return (False, "Order not Found")
+
 
 class Order:
     def __init__(self):
         self.id = str(uuid.uuid4())
-        self.dishes = {}
+        self.dishes = []
         self.status = 'pending'
     
     def total_money(self, menu):
         total_amount = 0
         for dish in self.dishes:
-            menu_dish = menu.get_dish(dish.id)
+            menu_dish, msg = menu.get_dish(dish.id)
             if menu_dish:
                 total_amount += menu_dish.amount * dish.quantity
             else:
-                print(f"Invalid Dish id detected: {dish.id}")
+                print(f"{msg}: {dish.id}")
         return total_amount
     
-    def add_dishes(self, dish_id, quantity):
-        if self.dishes.get(dish_id, None):
-            self.dishes[dish_id] +=  quantity
-        else:
-            self.dishes[dish_id] =  quantity
-
-    def update_dishes(self, dish_id, quantity):
-        if self.dishes.get(dish_id, None):
-            self.dishes[dish_id] = quantity
-            return True
-        return False
+    def add_dishes(self, dishes, menus):
+        valid_dishes = []
+        invalid_dishes = {}
+        for dish_id in dishes.keys():
+            dish, msg = menus.get_dish(dish_id)
+            if dish:
+                valid_dishes.append({"dish": dish, "quantity": dishes[dish_id]})
+            else:
+                invalid_dishes[dish_id] = dishes[dish_id]
+        self.dishes =  valid_dishes
+        return (self.dishes, invalid_dishes)
     
     def delete_dishes(self, dish_id):
         if self.dishes.get(dish_id, None):
@@ -109,7 +118,16 @@ class Order:
         self.status = status
 
     def json(self):
-        return {'id': self.id, 'dishes': self.dishes, 'status': self.status}
+        dishes = self.json_dishes()
+        return {'id': self.id, 'dishes': dishes, 'status': self.status}
+    
+    def json_dishes(self):
+        dishes = []
+        for dishes_dict in self.dishes:
+            dishes.append({"dish": dishes_dict.get("dish").json(), "quantity": dishes_dict.get("quantity")})
+        return dishes
+    
+
 
 
     

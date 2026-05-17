@@ -26,8 +26,8 @@ class Menu:
     def get_dish(self, id):
         for dish in self.menu:
             if dish.id == id:
-                return dish
-        return None
+                return (dish, None)
+        return (None, "Dish not Found")
 
     def __str__(self):
         menu = 'SS Restaurant 💕\n'
@@ -53,6 +53,10 @@ class Dish:
     
     def __str__(self):
         return f'{self.name}:\t{self.amount}\n'
+    
+    def json(self):
+        return {"id":self.id, "name":self.name, "amount":self.amount}
+    
     
     
 # fish_fry = Dish('Fish Fry', 50)

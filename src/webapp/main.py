@@ -1,5 +1,5 @@
 from flask import Flask, request, url_for, redirect
-import menu
+import src.webapp.menu as menu
 import json
 import customer
  
@@ -51,7 +51,6 @@ def delete_customer():
     
 @app.route("/get/customer/<id>", methods=['GET'])
 def get_customer(id):
-    # body = json.loads(request.data)
     response = customers.get(id)
     if response:
         return response.json(), 200
@@ -69,12 +68,14 @@ def create_order(id):
         body = json.loads(request.data)
         cust = customers.get(id)
         order = customer.Order()
-        for dish_id, quantity in body.items():
-            order.add_dishes(dish_id, quantity)
+        dishes, invalid_dishes = order.add_dishes(body, menus)
         orders.add(order)
         cust.add_order(order.id)
-        return cust.json()
+        if invalid_dishes:
+            return {"response": order.json(), "invalid_dishes": invalid_dishes}
+        return order.json()
     except Exception as e:
+        print(e)
         return {'error': 'Invalid Data'}
     
 @app.route("/customer/<cust_id>/order/<order_id>", methods=['GET'])
@@ -84,12 +85,22 @@ def get_order(cust_id, order_id):
         return orders.get_order(order_id).json()
     return "Order not Found", 404
 
-@app.route("/update/order")
-def update_order():
-    pass
+@app.route("/customer/<cust_id>/order/<order_id>/update", methods=['POST'])
+def update_order(cust_id, order_id):
+    body = json.loads(request.data)
+    cust = customers.get(cust_id)
+    if order_id in cust.orders:
+        order, (updated_dishes, invalid_dishes) = orders.update_order_dish(order_id, body , menus)
+        return {"dishes": order.json() , "invalid_dishes": invalid_dishes}
+    return "Order not Found", 404
 
-@app.route("/delete/order")
-def delete_order():
-    pass
- 
+@app.route("/customer/<cust_id>/order/<order_id>/cancel", methods=['POST'])
+def delete_order(cust_id, order_id):
+    cust = customers.get(cust_id)
+    if order_id in cust.orders:
+        if orders.update_status(order_id, "cancelled"):
+            return redirect(url_for('get_order', cust_id=cust_id, order_id=order_id)), 200
+        else:
+            return redirect(url_for('get_order', cust_id=cust_id, order_id=order_id)), 400
+
 app.run(port='8080', debug=True)
